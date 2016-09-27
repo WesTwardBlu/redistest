@@ -9,6 +9,7 @@ import redis.clients.jedis.JedisPoolConfig;
 import redis.clients.jedis.JedisShardInfo;
 import redis.clients.jedis.ShardedJedis;
 import redis.clients.jedis.ShardedJedisPool;
+import redis.clients.jedis.SortingParams;
 
 public class RedisClient {
 	private Jedis jedis;//非切片额 客户端连接
@@ -125,5 +126,79 @@ public class RedisClient {
 		System.out.println("一次性删除key201,key202:"+ jedis.del(new String[]{"key201","key202"}));
 		System.out.println("一次性获取key201,key202,key203,key204各自对应的值："+ jedis.mget("key201","key202","key203","key204"));
 		//jedis具备的功能shardedJedis中也可直接使用，下面测试一些前面没用过的方法
+		System.out.println("---------------------------------------string2--------------------------------");
+		System.out.println("=============新增键值对时防止覆盖原先值=============");
+		System.out.println("原先key301不存在时，新增key301："+ shardedJedis.setnx("key301", "value301"));
+		System.out.println("原先key302不存在时，新增key302："+ shardedJedis.setnx("key302", "value302"));
+		System.out.println("当key302存在时，尝试新增key302："+ shardedJedis.setnx("key302", "value302_2"));
+		System.out.println("获取key301对应的值："+ shardedJedis.get("key301"));
+		System.out.println("获取key302对应的值："+ shardedJedis.get("key302"));
+		System.out.println("=============超过有效期键值对被删除=============");
+		// 设置key的有效期，并存储数据 
+		System.out.println("新增key303，并指定过期时间为2秒"+ shardedJedis.setex("key303", 2, "value303_2s"));
+		System.out.println("获取key303对应的值："+ shardedJedis.get("key303"));
+		try {
+			Thread.sleep(3000l);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		System.out.println("3s之后，再取key303:"+ shardedJedis.get("key303"));
+		System.out.println("=============获取原值，更新为新值一步完成=============");
+		System.out.println("key302原值："+ shardedJedis.getSet("key302", "value302_getset"));
+		System.out.println("key302新值："+ shardedJedis.get("key302"));
+		System.out.println("=============获取子串=============");
+		System.out.println("获取key302对应值中的子串："+ shardedJedis.getrange("key302", 3, 6));
 	} 
+	
+	private void listOperate() {
+		System.out.println("======================list=========================="); 
+		System.out.println("=============增=============");
+		shardedJedis.lpush("list1", "Vector");
+		shardedJedis.lpush("list1", "ArrayList");
+		shardedJedis.lpush("list1", "Vector");
+		shardedJedis.lpush("list1", "linkedlist");
+		shardedJedis.lpush("list1", "maplist");
+		shardedJedis.lpush("list1", "seriallist");
+		shardedJedis.lpush("list1", "hashlist");
+		shardedJedis.lpush("list2", "3");
+		shardedJedis.lpush("list2", "1");
+		shardedJedis.lpush("list2", "5");
+		shardedJedis.lpush("list2", "2");
+		System.out.println("所有元素-list1："+ shardedJedis.lrange("list1", 0, -1));
+		System.out.println("所有元素-list2："+ shardedJedis.lrange("list2", 0, -1));
+		System.out.println("=============删=============");
+		// 删除列表指定的值 ，第二个参数为删除的个数（有重复时），后add进去的值先被删，类似于出栈
+		System.out.println("成功删除指定元素个数-list1："+ shardedJedis.lrem("list1", 2, "Vector"));
+		System.out.println("删除指定元素之后-list1："+ shardedJedis.lrange("list1", 0, -1));
+		// 删除区间以外的数据
+		System.out.println("除下标0-3区间之外的元素："+ shardedJedis.ltrim("list1", 0, 3));
+		System.out.println("删除指定区间之外元素后-list1："+ shardedJedis.lrange("list1", 0, -1));
+		// 列表元素出栈
+		System.out.println("出栈元素："+ shardedJedis.lpop("list1"));
+		System.out.println("元素出栈后-list1："+ shardedJedis.lrange("list1", 0, -1));
+		System.out.println("=============改=============");
+		// 修改列表中指定下标的值
+		shardedJedis.lset("list1", 0, "Vector_update");
+		System.out.println("下标为0的值修改后-list1："+ shardedJedis.lrange("list1", 0, -1));
+		System.out.println("=============查=============");
+		// 数组长度 
+		System.out.println("长度-stringlists："+ shardedJedis.llen("list1"));
+		System.out.println("长度-stringlists："+ shardedJedis.llen("list2"));
+		// 排序
+		/*
+         * list中存字符串时必须指定参数为alpha，如果不使用SortingParams，而是直接使用sort("list")，
+         * 会出现"ERR One or more scores can't be converted into double"
+         */
+		SortingParams sortingParams = new SortingParams();
+		sortingParams.alpha();
+		sortingParams.limit(0, 3);
+		System.out.println("返回排序后的结果-list1："+ shardedJedis.sort("list1", sortingParams));
+		System.out.println("返回排序后的结果-list2："+ shardedJedis.sort("list2"));
+		// 子串：  start为元素下标，end也为元素下标；-1代表倒数一个元素，-2代表倒数第二个元素
+		System.out.println("子串-第二个开始到结束："+ shardedJedis.lrange("list1", 1, -1));
+		// 获取列表指定下标的值
+		System.out.println("获取下标为2的元素："+ shardedJedis.lindex("list1", 2));
+		
+	}
 }
