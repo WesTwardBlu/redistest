@@ -201,4 +201,19 @@ public class RedisClient {
 		System.out.println("获取下标为2的元素："+ shardedJedis.lindex("list1", 2));
 		
 	}
+	
+	/**
+	 * 对set的操作
+	 * */
+	private void setOperate() {
+		System.out.println("======================set=========================="); 
+		System.out.println("=============增=============");
+		System.out.println("向set1集合中加入元素element001："+ jedis.sadd("set1", "element001"));
+		System.out.println("向set1集合中加入元素element002："+ jedis.sadd("set1", "element002"));
+		System.out.println("向set1集合中加入元素element003："+ jedis.sadd("set1", "element003"));
+		System.out.println("向set1集合中加入元素element004："+ jedis.sadd("set1", "element004"));
+		System.out.println("查看sets集合中的所有元素:"+ jedis.smembers("set1"));
+		
+		
+	}
 }
