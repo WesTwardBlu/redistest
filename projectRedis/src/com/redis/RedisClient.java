@@ -2,6 +2,7 @@ package com.redis;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
@@ -59,6 +60,11 @@ public class RedisClient {
 	
 	public void show() {
 		keyOperate();
+		StringOperate();
+		listOperate();
+		setOperate();
+		sortedsetOperate();
+		hashOperate();
 	}
 
 	private void keyOperate() {
@@ -212,8 +218,84 @@ public class RedisClient {
 		System.out.println("向set1集合中加入元素element002："+ jedis.sadd("set1", "element002"));
 		System.out.println("向set1集合中加入元素element003："+ jedis.sadd("set1", "element003"));
 		System.out.println("向set1集合中加入元素element004："+ jedis.sadd("set1", "element004"));
-		System.out.println("查看sets集合中的所有元素:"+ jedis.smembers("set1"));
+		System.out.println("查看set1集合中的所有元素:"+ jedis.smembers("set1"));
 		
+		System.out.println("=============删=============");
+		System.out.println("集合set1中删除元素element003："+ jedis.srem("set1", "element004"));
+		System.out.println("查看set1集合中的所有元素:"+ jedis.smembers("set1"));
+		System.out.println("set1集合中任意位置的元素出栈："+ jedis.spop("set1"));
+		System.out.println("查看set1集合中的所有元素:"+ jedis.smembers("set1"));
+		System.out.println("=============改=============");
+		
+		System.out.println("=============查=============");
+		System.out.println("判断element001是否在集合set1中："+ jedis.sismember("set1", "element001"));
+		System.out.println("循环查询获取set1中的每个元素：");
+		Set<String> set = jedis.smembers("set1");
+		for (String string : set) {
+			System.out.println(string);
+		}
+		
+		System.out.println("=============集合运算=============");
+		System.out.println("set2中添加元素element001："+ jedis.sadd("set2", "element001")); 
+		System.out.println("set2中添加元素element002："+ jedis.sadd("set2", "element002"));
+		System.out.println("set2中添加元素element003："+ jedis.sadd("set2", "element003"));
+		System.out.println("set2中添加元素element004："+ jedis.sadd("set2", "element004"));
+		System.out.println("set2中添加元素element005："+ jedis.sadd("set2", "element005"));
+		System.out.println("set2中添加元素element006："+ jedis.sadd("set2", "element006"));
+		System.out.println("查看set1集合中的所有元素:"+ jedis.smembers("set2"));
+		System.out.println("查看set2集合中的所有元素:"+ jedis.smembers("set2"));
+		System.out.println("sets1和sets2交集："+ jedis.sinter("set1","set2"));
+		System.out.println("sets1和sets2并集："+ jedis.sunion("set1","set2"));
+		System.out.println("sets1和sets2差集："+ jedis.sdiff("set1","set2"));//差集：set1中有，set2中没有的元素
+		
+	}
+	
+	private void sortedsetOperate() {
+		System.out.println("======================zset=========================="); 
+		System.out.println("=============增=============");
+		System.out.println("zset1中添加元素element001："+ shardedJedis.zadd("zset1", 7.0, "element001"));
+		System.out.println("zset1中添加元素element002："+ shardedJedis.zadd("zset1", 4.0, "element002"));
+		System.out.println("zset1中添加元素element003："+ shardedJedis.zadd("zset1", 3.0, "element003"));
+		System.out.println("zset1中添加元素element004："+ shardedJedis.zadd("zset1", 2.0, "element004"));
+		System.out.println("zset1中添加元素element005："+ shardedJedis.zadd("zset1", 1.0, "element005"));
+		System.out.println("zset1集合中的所有元素："+ shardedJedis.zrange("zset1", 0, -1));//按照权重值排序  这里的权重：下标
+		
+		System.out.println("=============删=============");
+		System.out.println("zset1中删除元素element002："+ shardedJedis.zrem("zset1", "element004"));
+		System.out.println("zset1集合中的所有元素："+ shardedJedis.zrange("zset1", 0, -1));
+		
+		System.out.println("=============改=============");
+		
+		System.out.println("=============查=============");
+		System.out.println("统计zset集合中的元素中个数："+ shardedJedis.zcard("zset1"));
+		System.out.println("统计zset集合中权重某个范围内（1.0——5.0），元素的个数："+ shardedJedis.zcount("zset1", 1.0, 4.0));
+		System.out.println("查看zset集合中element004的权重："+ shardedJedis.zscore("zset1", "element004"));
+		System.out.println("查看下标1到2范围内的元素值："+ shardedJedis.zrange("zset", 1, 2));
+		
+	}
+	
+	private void hashOperate() {
+		System.out.println("=============增=============");
+		System.out.println("hashs中添加key001和value001键值对："+ shardedJedis.hset("hash1", "key001", "value001"));
+		System.out.println("hashs中添加key001和value001键值对："+ shardedJedis.hset("hash1", "key002", "value002"));
+		System.out.println("hashs中添加key003和value003键值对："+ shardedJedis.hset("hash1", "key003", "value003"));
+		System.out.println("新增key004和4的整型键值对："+ shardedJedis.hincrBy("hash1", "key004", 41));
+		System.out.println("hashs中的所有值："+ shardedJedis.hvals("hash1"));
+		
+		System.out.println("=============删=============");
+		System.out.println("hashs中删除key002键值对："+ shardedJedis.hdel("hash1", "key002"));
+		System.err.println("hashs中的所有值："+ shardedJedis.hvals("hash1"));
+		
+		System.out.println("=============改=============");
+		System.out.println("key004整型键值的值增加100："+ shardedJedis.hincrBy("hash1", "key004", 100L));
+		System.err.println("hashs中的所有值："+ shardedJedis.hvals("hash1"));
+		
+		System.out.println("=============查=============");
+		System.out.println("判断key003是否存在："+ shardedJedis.hexists("hash1", "key003"));
+		System.out.println("获取key004对应的值："+ shardedJedis.hget("hash1", "key004"));
+		System.out.println("批量获取key001和key003对应的值："+ shardedJedis.hmget("hash1", "key001","key002"));
+		System.out.println("获取hashs中所有的key："+ shardedJedis.hkeys("hash1"));
+		System.out.println("获取hashs中所有的value："+ shardedJedis.hvals("hash1"));
 		
 	}
 }
